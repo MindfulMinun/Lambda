@@ -1,5 +1,5 @@
 // Basic Math
-import Lambda from '../index.js'
+import * as Lambda from '../index.js'
 const math = new Lambda.Scope()
 
 math.defineOperator({

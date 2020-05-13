@@ -33,7 +33,7 @@ const Lambda = {}
 /**
  * Describes a field of math that contains a set of custom operations
  */
-Lambda.Scope = class Scope {
+export class Scope {
     constructor() {
         /**
          * @type {Object<string, Lambda.ExpressionOperator>}
@@ -46,7 +46,7 @@ Lambda.Scope = class Scope {
      * @param {LambdaOperatorDescriptor} op An object describing the operator
      */
     defineOperator(op) {
-        const operator = new Lambda.ExpressionOperator(op)
+        const operator = new ExpressionOperator(op)
         this.operators[op.name] = operator
         return operator
     }
@@ -55,12 +55,12 @@ Lambda.Scope = class Scope {
      * Creates a manipulatable expression
      */
     createExpression() {
-        return new Lambda.Expression(this)
+        return new Expression(this)
     }
 
     /**
      * @param {string} name The name of the operator
-     * @returns {Lambda.ExpressionOperator?} The operator or null if not found
+     * @returns {ExpressionOperator?} The operator or null if not found
      */
     getOperator(name) {
         return this.operators[name] || null
@@ -70,27 +70,27 @@ Lambda.Scope = class Scope {
 /**
  * Describes an expression within a scope
  */
-Lambda.Expression = class Expression {
+export class Expression {
     /**
-     * @param {Lambda.Scope} scope The scope to inherit operators from
+     * @param {Scope} scope The scope to inherit operators from
      */
     constructor(scope) {
         this.scope = scope
         /**
          * The tokens that make up this expression, read from left to right.
-         * @type {Lambda.ExpressionToken[]}
+         * @type {ExpressionToken[]}
          */
         this.tokens = []
         /**
          * The tokens that make up this expression, but in postfix.
-         * @type {Lambda.ExpressionToken[]}
+         * @type {ExpressionToken[]}
          */
         this.postfix = []
     }
     
     /**
      * Writes tokens to the end of the expression
-     * @param {...Lambda.ExpressionToken} tokens The tokens to write
+     * @param {...ExpressionToken} tokens The tokens to write
      */
     write(...tokens) {
         this.tokens.push(...tokens)
@@ -111,7 +111,7 @@ Lambda.Expression = class Expression {
          */
         const peek = what => what[what.length - 1]
 
-        /** @type {Lambda.ExpressionToken[]} */
+        /** @type {ExpressionToken[]} */
         const stack = []
 
         // 1. While there are tokens to be read, read a token
@@ -119,7 +119,7 @@ Lambda.Expression = class Expression {
             const token = tokens[i];
 
             // 1a. If the token is a number or a variable, add it to the output queue
-            if (token instanceof Lambda.ExpressionValue) {
+            if (token instanceof ExpressionValue) {
                 this.postfix.push(token)
                 continue
             }
@@ -128,14 +128,14 @@ Lambda.Expression = class Expression {
             // If a token is a function argument separator...
 
             // 1b. If the token is an operator...
-            if (token instanceof Lambda.ExpressionOperator) {
+            if (token instanceof ExpressionOperator) {
                 // 1bi. While there are operators on the stack...
                 while (stack.length) {
-                    if (!(peek(stack) instanceof Lambda.ExpressionOperator)) {
+                    if (!(peek(stack) instanceof ExpressionOperator)) {
                         break
                     }
                     
-                    /** @type {Lambda.ExpressionOperator} */
+                    /** @type {ExpressionOperator} */
                     const next = peek(stack)
 
                     // 1bii. and if the last element is left-associative AND its precedence is less than or equal to the current token...
@@ -156,18 +156,18 @@ Lambda.Expression = class Expression {
             }
 
             // 1c. If the token is a left paren, push it onto the stack.
-            if (token instanceof Lambda.ExpressionGrouper && token.associativity === 'L') {
+            if (token instanceof ExpressionGrouper && token.associativity === 'L') {
                 stack.push(token)
                 continue
             }
 
             // 1d. If the token is a right paren...
-            if (token instanceof Lambda.ExpressionGrouper && token.associativity === 'R') {
+            if (token instanceof ExpressionGrouper && token.associativity === 'R') {
                 let foundMatching = false
                 while (stack.length && !foundMatching) {
                     // 1di. pop operators off the stack until a matching parens is found
                     const temp = stack.pop()
-                    if (token instanceof Lambda.ExpressionGrouper && token.associativity === 'L') {
+                    if (token instanceof ExpressionGrouper && token.associativity === 'L') {
                         foundMatching = true
                     } else {
                         this.postfix.push(temp)
@@ -194,7 +194,7 @@ Lambda.Expression = class Expression {
             const temp = stack.pop()
 
             // (If there are parens was in the queue, there's a mismatch)
-            if (temp instanceof Lambda.ExpressionGrouper) {
+            if (temp instanceof ExpressionGrouper) {
                 throw Error("Mismatched parens (too many?)")
             }
 
@@ -204,10 +204,10 @@ Lambda.Expression = class Expression {
 
     /**
      * Evaluates this expression given that all of the operators contain a `perform` function.
-     * @returns {Lambda.ExpressionValue}
+     * @returns {ExpressionValue}
      */
     evaluate() {
-        /** @type {Lambda.ExpressionValue[]} */
+        /** @type {ExpressionValue[]} */
         const stack = []
 
         // If !postfix.length, shuntingYard()
@@ -215,14 +215,14 @@ Lambda.Expression = class Expression {
 
         for (let i = 0; i < this.postfix.length; i++) {
             const token = this.postfix[i]
-            if (token instanceof Lambda.ExpressionValue) {
+            if (token instanceof ExpressionValue) {
                 stack.push(token)
                 continue
             }
-            if (token instanceof Lambda.ExpressionOperator) {
+            if (token instanceof ExpressionOperator) {
                 if (token._stringify.length) {
                     let l = token._stringify.length
-                    /** @type {Lambda.ExpressionValue[]} */
+                    /** @type {ExpressionValue[]} */
                     const operands = []
                     while (0 < l) {
                         const temp = stack.pop()
@@ -236,8 +236,8 @@ Lambda.Expression = class Expression {
                     // console.log(`Performing ${token.name} onto ${operands.length}`)
                     const result = token.perform(...operands)
                     stack.push(
-                        result instanceof Lambda.ExpressionValue ? result
-                            : new Lambda.ExpressionValue(result)
+                        result instanceof ExpressionValue ? result
+                            : new ExpressionValue(result)
                     )
                 } else {
                     console.error(token)
@@ -252,12 +252,12 @@ Lambda.Expression = class Expression {
     toString() {
         // if (this.postfix.length) {
         // } else {
-        return this.tokens.map(t => t.value).join(' ')
+        return this.tokens.join(' ')
         // }
     }
 }
 
-Lambda.ExpressionToken = class ExpressionToken {
+export class ExpressionToken {
     /**
      * @param {*} value A representation of this token
      */
@@ -269,16 +269,19 @@ Lambda.ExpressionToken = class ExpressionToken {
     }
 }
 
-Lambda.ExpressionValue = class ExpressionValue extends Lambda.ExpressionToken {
+export class ExpressionValue extends ExpressionToken {
     /**
      * @param {*} value The value of this token
      */
     constructor(value) {
         super(value)
     }
+    toString() {
+        return this.value
+    }
 }
 
-Lambda.ExpressionGrouper = class ExpressionGrouper extends Lambda.ExpressionToken {
+export class ExpressionGrouper extends ExpressionToken {
     /**
      * @param {"("|")"|"["|"]"|"{"|"}"} value The grouper
      */
@@ -289,7 +292,7 @@ Lambda.ExpressionGrouper = class ExpressionGrouper extends Lambda.ExpressionToke
     }
 }
 
-Lambda.ExpressionOperator = class ExpressionOperator extends Lambda.ExpressionToken {
+export class ExpressionOperator extends ExpressionToken {
     /**
      * @param {LambdaOperatorDescriptor} op An object describing the operator
      */
@@ -307,5 +310,3 @@ Lambda.ExpressionOperator = class ExpressionOperator extends Lambda.ExpressionTo
         return this._stringify(...arguments)
     }
 }
-
-export default Lambda

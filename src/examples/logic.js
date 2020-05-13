@@ -1,5 +1,5 @@
 // Predicate logic
-import Lambda from '../index.js'
+import * as Lambda from '../index.js'
 const logic = new Lambda.Scope()
 
 logic.defineOperator({

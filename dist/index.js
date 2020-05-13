@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports["default"] = void 0;
+exports.ExpressionOperator = exports.ExpressionGrouper = exports.ExpressionValue = exports.ExpressionToken = exports.Expression = exports.Scope = void 0;
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -73,7 +73,7 @@ var Lambda = {};
  * Describes a field of math that contains a set of custom operations
  */
 
-Lambda.Scope = /*#__PURE__*/function () {
+var Scope = /*#__PURE__*/function () {
   function Scope() {
     _classCallCheck(this, Scope);
 
@@ -91,7 +91,7 @@ Lambda.Scope = /*#__PURE__*/function () {
   _createClass(Scope, [{
     key: "defineOperator",
     value: function defineOperator(op) {
-      var operator = new Lambda.ExpressionOperator(op);
+      var operator = new ExpressionOperator(op);
       this.operators[op.name] = operator;
       return operator;
     }
@@ -102,11 +102,11 @@ Lambda.Scope = /*#__PURE__*/function () {
   }, {
     key: "createExpression",
     value: function createExpression() {
-      return new Lambda.Expression(this);
+      return new Expression(this);
     }
     /**
      * @param {string} name The name of the operator
-     * @returns {Lambda.ExpressionOperator?} The operator or null if not found
+     * @returns {ExpressionOperator?} The operator or null if not found
      */
 
   }, {
@@ -123,9 +123,11 @@ Lambda.Scope = /*#__PURE__*/function () {
  */
 
 
-Lambda.Expression = /*#__PURE__*/function () {
+exports.Scope = Scope;
+
+var Expression = /*#__PURE__*/function () {
   /**
-   * @param {Lambda.Scope} scope The scope to inherit operators from
+   * @param {Scope} scope The scope to inherit operators from
    */
   function Expression(scope) {
     _classCallCheck(this, Expression);
@@ -133,20 +135,20 @@ Lambda.Expression = /*#__PURE__*/function () {
     this.scope = scope;
     /**
      * The tokens that make up this expression, read from left to right.
-     * @type {Lambda.ExpressionToken[]}
+     * @type {ExpressionToken[]}
      */
 
     this.tokens = [];
     /**
      * The tokens that make up this expression, but in postfix.
-     * @type {Lambda.ExpressionToken[]}
+     * @type {ExpressionToken[]}
      */
 
     this.postfix = [];
   }
   /**
    * Writes tokens to the end of the expression
-   * @param {...Lambda.ExpressionToken} tokens The tokens to write
+   * @param {...ExpressionToken} tokens The tokens to write
    */
 
 
@@ -179,7 +181,7 @@ Lambda.Expression = /*#__PURE__*/function () {
       var peek = function peek(what) {
         return what[what.length - 1];
       };
-      /** @type {Lambda.ExpressionToken[]} */
+      /** @type {ExpressionToken[]} */
 
 
       var stack = []; // 1. While there are tokens to be read, read a token
@@ -187,7 +189,7 @@ Lambda.Expression = /*#__PURE__*/function () {
       for (var i = 0; i < tokens.length; i++) {
         var token = tokens[i]; // 1a. If the token is a number or a variable, add it to the output queue
 
-        if (token instanceof Lambda.ExpressionValue) {
+        if (token instanceof ExpressionValue) {
           this.postfix.push(token);
           continue;
         } // If a token is a function token...
@@ -195,13 +197,13 @@ Lambda.Expression = /*#__PURE__*/function () {
         // 1b. If the token is an operator...
 
 
-        if (token instanceof Lambda.ExpressionOperator) {
+        if (token instanceof ExpressionOperator) {
           // 1bi. While there are operators on the stack...
           while (stack.length) {
-            if (!(peek(stack) instanceof Lambda.ExpressionOperator)) {
+            if (!(peek(stack) instanceof ExpressionOperator)) {
               break;
             }
-            /** @type {Lambda.ExpressionOperator} */
+            /** @type {ExpressionOperator} */
 
 
             var next = peek(stack); // 1bii. and if the last element is left-associative AND its precedence is less than or equal to the current token...
@@ -221,20 +223,20 @@ Lambda.Expression = /*#__PURE__*/function () {
         } // 1c. If the token is a left paren, push it onto the stack.
 
 
-        if (token instanceof Lambda.ExpressionGrouper && token.associativity === 'L') {
+        if (token instanceof ExpressionGrouper && token.associativity === 'L') {
           stack.push(token);
           continue;
         } // 1d. If the token is a right paren...
 
 
-        if (token instanceof Lambda.ExpressionGrouper && token.associativity === 'R') {
+        if (token instanceof ExpressionGrouper && token.associativity === 'R') {
           var foundMatching = false;
 
           while (stack.length && !foundMatching) {
             // 1di. pop operators off the stack until a matching parens is found
             var temp = stack.pop();
 
-            if (token instanceof Lambda.ExpressionGrouper && token.associativity === 'L') {
+            if (token instanceof ExpressionGrouper && token.associativity === 'L') {
               foundMatching = true;
             } else {
               this.postfix.push(temp);
@@ -260,7 +262,7 @@ Lambda.Expression = /*#__PURE__*/function () {
         var _temp = stack.pop(); // (If there are parens was in the queue, there's a mismatch)
 
 
-        if (_temp instanceof Lambda.ExpressionGrouper) {
+        if (_temp instanceof ExpressionGrouper) {
           throw Error("Mismatched parens (too many?)");
         }
 
@@ -269,13 +271,13 @@ Lambda.Expression = /*#__PURE__*/function () {
     }
     /**
      * Evaluates this expression given that all of the operators contain a `perform` function.
-     * @returns {Lambda.ExpressionValue}
+     * @returns {ExpressionValue}
      */
 
   }, {
     key: "evaluate",
     value: function evaluate() {
-      /** @type {Lambda.ExpressionValue[]} */
+      /** @type {ExpressionValue[]} */
       var stack = []; // If !postfix.length, shuntingYard()
 
       this.postfix.length || this.shuntingYard();
@@ -283,15 +285,15 @@ Lambda.Expression = /*#__PURE__*/function () {
       for (var i = 0; i < this.postfix.length; i++) {
         var token = this.postfix[i];
 
-        if (token instanceof Lambda.ExpressionValue) {
+        if (token instanceof ExpressionValue) {
           stack.push(token);
           continue;
         }
 
-        if (token instanceof Lambda.ExpressionOperator) {
+        if (token instanceof ExpressionOperator) {
           if (token._stringify.length) {
             var l = token._stringify.length;
-            /** @type {Lambda.ExpressionValue[]} */
+            /** @type {ExpressionValue[]} */
 
             var operands = [];
 
@@ -309,7 +311,7 @@ Lambda.Expression = /*#__PURE__*/function () {
 
 
             var result = token.perform.apply(token, operands);
-            stack.push(result instanceof Lambda.ExpressionValue ? result : new Lambda.ExpressionValue(result));
+            stack.push(result instanceof ExpressionValue ? result : new ExpressionValue(result));
           } else {
             console.error(token);
             throw Error("Not implemented");
@@ -324,16 +326,16 @@ Lambda.Expression = /*#__PURE__*/function () {
     value: function toString() {
       // if (this.postfix.length) {
       // } else {
-      return this.tokens.map(function (t) {
-        return t.value;
-      }).join(' '); // }
+      return this.tokens.join(' '); // }
     }
   }]);
 
   return Expression;
 }();
 
-Lambda.ExpressionToken = /*#__PURE__*/function () {
+exports.Expression = Expression;
+
+var ExpressionToken = /*#__PURE__*/function () {
   /**
    * @param {*} value A representation of this token
    */
@@ -353,8 +355,10 @@ Lambda.ExpressionToken = /*#__PURE__*/function () {
   return ExpressionToken;
 }();
 
-Lambda.ExpressionValue = /*#__PURE__*/function (_Lambda$ExpressionTok) {
-  _inherits(ExpressionValue, _Lambda$ExpressionTok);
+exports.ExpressionToken = ExpressionToken;
+
+var ExpressionValue = /*#__PURE__*/function (_ExpressionToken) {
+  _inherits(ExpressionValue, _ExpressionToken);
 
   var _super = _createSuper(ExpressionValue);
 
@@ -367,11 +371,20 @@ Lambda.ExpressionValue = /*#__PURE__*/function (_Lambda$ExpressionTok) {
     return _super.call(this, value);
   }
 
-  return ExpressionValue;
-}(Lambda.ExpressionToken);
+  _createClass(ExpressionValue, [{
+    key: "toString",
+    value: function toString() {
+      return this.value;
+    }
+  }]);
 
-Lambda.ExpressionGrouper = /*#__PURE__*/function (_Lambda$ExpressionTok2) {
-  _inherits(ExpressionGrouper, _Lambda$ExpressionTok2);
+  return ExpressionValue;
+}(ExpressionToken);
+
+exports.ExpressionValue = ExpressionValue;
+
+var ExpressionGrouper = /*#__PURE__*/function (_ExpressionToken2) {
+  _inherits(ExpressionGrouper, _ExpressionToken2);
 
   var _super2 = _createSuper(ExpressionGrouper);
 
@@ -391,10 +404,12 @@ Lambda.ExpressionGrouper = /*#__PURE__*/function (_Lambda$ExpressionTok2) {
   }
 
   return ExpressionGrouper;
-}(Lambda.ExpressionToken);
+}(ExpressionToken);
 
-Lambda.ExpressionOperator = /*#__PURE__*/function (_Lambda$ExpressionTok3) {
-  _inherits(ExpressionOperator, _Lambda$ExpressionTok3);
+exports.ExpressionGrouper = ExpressionGrouper;
+
+var ExpressionOperator = /*#__PURE__*/function (_ExpressionToken3) {
+  _inherits(ExpressionOperator, _ExpressionToken3);
 
   var _super3 = _createSuper(ExpressionOperator);
 
@@ -429,7 +444,6 @@ Lambda.ExpressionOperator = /*#__PURE__*/function (_Lambda$ExpressionTok3) {
   }]);
 
   return ExpressionOperator;
-}(Lambda.ExpressionToken);
+}(ExpressionToken);
 
-var _default = Lambda;
-exports["default"] = _default;
+exports.ExpressionOperator = ExpressionOperator;
