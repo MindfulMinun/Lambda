@@ -3,6 +3,7 @@
     "version": "0.1.0",
     "description": "Make your own calculator",
     "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "author": "MindfulMinun <importantmails4bc@gmail.com> (https://benjic.xyz)",
     "contributors": [],
     "homepage": "https://github.com/MindfulMinun/Lambda",
@@ -10,7 +11,8 @@
     "license": "MIT",
     "private": true,
     "scripts": {
-        "build": "rm -rf dist && ./node_modules/.bin/babel src -d dist",
+        "build": "rm -rf dist && npm run declaration:build && ./node_modules/.bin/babel src -d dist",
+        "declaration:build": "npx tsc",
         "watch": "nodemon --watch src --exec 'npm run build'",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -21,7 +23,8 @@
         "@babel/cli": "^7.8.4",
         "@babel/core": "^7.9.0",
         "@babel/preset-env": "^7.9.5",
-        "nodemon": "^2.0.3"
+        "nodemon": "^2.0.3",
+        "typescript": "^3.9.2"
     },
     "dependencies": {}
 }
